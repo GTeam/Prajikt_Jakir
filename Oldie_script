@@ -1,0 +1,169 @@
+using UnityEngine;
+using System.Collections;
+
+public class characterScript : MonoBehaviour {
+
+	public float forceUp = 0f;
+	public const float maxForceUp = 50f;
+	public float destination = 0f;
+	public float speed = 5f;
+
+	public float enemyAppearDestination = 100f;
+	public float medalAppearDestination = 30f;
+	public int medalNumberInGroup = 3;
+
+	public GameObject enemyPrefab;
+	public GameObject medalPrefab;
+	// Use this for initialization
+	public bool group = true;
+
+	void CalculateForceUp()
+	{
+		var rotation = transform.localRotation.eulerAngles;
+		if(rotation.z < 360 && rotation.z > 90 && forceUp > 0)
+		{
+			forceUp -= forceUp/50;
+			return;
+		}
+
+		/*if (rotation.z < 360 && rotation.z > 315) 
+		{
+			rotation.z = Mathf.Abs(325 - rotation.z);
+		}*/
+		if (transform.localPosition.y < 2.5) 
+		{
+			forceUp = maxForceUp - Mathf.Abs (22.5f - rotation.z) * (maxForceUp / 135f);
+			return;
+		}
+		if (forceUp > 20) 
+		{
+						forceUp = 10f;
+		}
+	}
+
+	void CalculateSpeed()
+	{
+		
+		globalVariables globalV = (globalVariables)GameObject.Find("Main Camera").GetComponent<globalVariables>();
+
+		var rotation = transform.localRotation.eulerAngles;
+		if (rotation.z < 270 && rotation.z > 0 && globalV.Speed > 0.01) 
+		{
+			globalV.Speed -= globalV.Speed/10;
+			if(globalV.Speed < 0.01) {globalV.Speed = 0.01f;}
+			return;
+		}
+		if(globalV.Speed < 0.1)
+		{
+			globalV.Speed += globalV.Speed*0.1f;
+			
+			if(globalV.Speed > 0.1) globalV.Speed = 0.1f;
+		}
+
+	}
+
+	public void CalculatePosition()
+	{
+		float localY = transform.localPosition.y;
+		float localZ = transform.localPosition.z;
+		transform.localPosition = new Vector3(-2.5f,localY,localZ);
+		if (localY > 4) 
+		{
+			transform.localPosition = new Vector3(-2.5f,4,localZ);
+		}
+		if (localY < -4.2) 
+		{
+			transform.localPosition = new Vector3(-2.5f,-4.2f,localZ);
+		}
+	}
+
+
+	void Start () {
+
+	}
+
+	void FixedUpdate()
+	{
+		CalculateForceUp ();
+		CalculatePosition ();
+		rigidbody2D.AddForce (transform.up * forceUp);
+	}
+
+	void OnCollisionEnter2D(Collision2D collision)
+	{
+		print ("HAHA U DIE!");
+	}
+
+	// Update is called once per frame
+	void Update () 
+	{
+		//CalculateSpeed ();
+
+
+
+
+		globalVariables globalV = (globalVariables)GameObject.Find("Main Camera").GetComponent<globalVariables>();
+
+
+
+		if (!Input.GetKey ("left")) 
+		{
+			var right = Quaternion.Euler (0, 0, -3);
+			if (transform.rotation.eulerAngles.z > 0 && transform.rotation.eulerAngles.z < 40)
+				transform.rotation *= right;
+		}
+		else if(Input.GetKey("left"))
+		{
+			var left = Quaternion.Euler(0,0,3);
+			if(transform.rotation.eulerAngles.z < 30 ||  transform.rotation.eulerAngles.z > 340)
+			transform.rotation *= left;	
+		}
+		if (Input.GetKey ("up")) 
+		{
+			globalV.Speed = 1f;
+		}
+		if (Input.GetKey ("down")) 
+		{
+			globalV.Speed = 0.1f;
+		}
+
+		destination += (Time.time * globalV.Speed) * 0.1f;
+	
+		if(destination > enemyAppearDestination)
+		{
+			GameObject enemyObject = (GameObject)Instantiate(enemyPrefab);
+
+			float randomNumber = Random.Range(100, 300);
+			enemyAppearDestination += (float)randomNumber;
+		}
+
+		if (destination > medalAppearDestination) 
+		{
+			StartCoroutine (medalAppear ());
+			float randomNumber = Random.Range(10, 30);
+			medalAppearDestination += (float)randomNumber;
+		}
+
+
+	}
+	/*IEnumerator enemyAppear()
+	{
+
+	}*/
+	IEnumerator medalAppear()
+	{
+
+		float randomY = Random.Range(-2.5F, 3F);
+		float randomNumber = Random.Range(1, 6);
+		for(int i = 0;i < randomNumber; i++ )
+		{
+			GameObject medalObject = (GameObject)Instantiate(medalPrefab);
+			var position = transform.position;
+			medalObject.transform.position = new Vector3(position.x + 12f,randomY,position.z);
+			yield return new WaitForSeconds(0.1f);
+			
+		}
+
+	}
+
+}
